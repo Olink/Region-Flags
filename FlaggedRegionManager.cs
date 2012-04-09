@@ -13,6 +13,7 @@ namespace RegionFlags
         public FlaggedRegionManager()
         {
             regions = new Dictionary<string, FlaggedRegion>();
+            regions.Add("test", new FlaggedRegion( null ));
         }
 
         public FlaggedRegion getRegion( string region )

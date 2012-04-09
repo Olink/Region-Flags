@@ -8,7 +8,7 @@ namespace RegionFlags
 {
     class FlaggedRegion
     {
-        private int flags = 0x000;
+        private int flags = 0;
         private Region region;
 
         public FlaggedRegion(Region r )

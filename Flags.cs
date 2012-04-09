@@ -7,8 +7,8 @@ namespace RegionFlags
 {
     public enum Flags
     {
-        PRIVATE = 0x001,
-        PVP = 0x010,
-        DEATH = 0x100
+        PRIVATE = 1,
+        PVP = 2,
+        DEATH = 4
     }
 }

@@ -27,5 +27,12 @@ namespace RegionFlags
             positions.Enqueue(pos);
         }
 
+        public Vector2 getTP()
+        {
+            Vector2 pos = positions.Peek();
+            reset(pos);
+            return pos;
+        }
+
     }
 }
