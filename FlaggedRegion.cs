@@ -16,6 +16,12 @@ namespace RegionFlags
             region = r;
         }
 
+        public FlaggedRegion(Region r, int f )
+        {
+            region = r;
+            flags = f;
+        }
+
         public Region getRegion()
         {
             return region;
