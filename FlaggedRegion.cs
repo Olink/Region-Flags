@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using TShockAPI.DB;
+using Terraria;
 
 namespace RegionFlags
 {
@@ -10,6 +11,7 @@ namespace RegionFlags
     {
         private int flags = 0;
         private Region region;
+        private int dps = 0;
 
         public FlaggedRegion(Region r )
         {
@@ -29,7 +31,10 @@ namespace RegionFlags
 
         public void setFlags(Flags f)
         {
-            flags |= (int)f;
+            if (f == Flags.NONE)
+                flags = 0;
+            else 
+                flags |= (int)f;
         }
 
         public void removeFlags(Flags f)
@@ -52,7 +57,34 @@ namespace RegionFlags
             {
                 f.Add(Flags.PVP);
             }
+            if ((flags & (int)Flags.PVP) == (int)Flags.PVP)
+            {
+                f.Add(Flags.PVP);
+            }
+            if ((flags & (int)Flags.HURT) == (int)Flags.HURT)
+            {
+                f.Add(Flags.HURT);
+            }
+            if ((flags & (int)Flags.NOITEM) == (int)Flags.NOITEM)
+            {
+                f.Add(Flags.NOITEM);
+            }
             return f;
+        }
+
+        public int getIntFlags()
+        {
+            return flags;
+        }
+
+        public int getDPS()
+        {
+            return dps;
+        }
+
+        public void setDPS( int s )
+        {
+            dps = s;
         }
     }
 }

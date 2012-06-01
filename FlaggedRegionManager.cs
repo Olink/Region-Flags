@@ -14,21 +14,51 @@ namespace RegionFlags
         public FlaggedRegionManager()
         {
             regions = new Dictionary<string, FlaggedRegion>();
-            regions.Add("test", new FlaggedRegion( null ));
         }
 
-        public void ImportRegion( string name, int flags )
+        public void ImportRegion( string name, int flags, int d )
         {
             var reg = TShock.Regions.GetRegionByName(name);
+            if( reg == null )
+            {
+                Console.WriteLine( "{0} was not found in tshocks region list.", name);
+                return;
+            }
             FlaggedRegion f = new FlaggedRegion(reg, flags);
+            f.setDPS( d );
+            regions.Add( name, f );
         }
 
-        public void AddRegion( string name, int flags )
+        public bool AddRegion( string name, int flags )
         {
+            if( regions.ContainsKey( name ) )
+            {
+                return false;
+            }
             var reg = TShock.Regions.GetRegionByName(name);
             FlaggedRegion f = new FlaggedRegion(reg, flags);
+            f.setDPS(0);
             //todo:save to db
-            
+            RegionFlags.db.Query(
+                    "INSERT INTO Regions (Name, Flags, Damage) VALUES (@0, @1, @2);",
+                    name, flags, 0);
+            regions.Add(name, f);
+
+            return true;
+        }
+
+        public bool UpdateRegion( string name )
+        {
+            if( !regions.ContainsKey(name))
+            {
+                return false;
+            }
+
+            FlaggedRegion f = regions[name];
+
+            RegionFlags.db.Query(
+                    "UPDATE Regions SET Flags=@0, Damage=@1 WHERE Name=@2", f.getIntFlags(), f.getDPS(), name);
+            return true;
         }
 
         public FlaggedRegion getRegion( string region )
@@ -39,6 +69,20 @@ namespace RegionFlags
             }
 
             return null;
+        }
+
+        public List<FlaggedRegion> InRegions( int x, int y )
+        {
+            List<FlaggedRegion> ret = new List<FlaggedRegion>();
+            foreach( FlaggedRegion reg in regions.Values )
+            {
+                if (reg.getRegion() != null)
+                {
+                    if (reg.getRegion().InArea(x, y))
+                        ret.Add(reg);
+                }
+            }
+            return ret;
         }
     }
 }

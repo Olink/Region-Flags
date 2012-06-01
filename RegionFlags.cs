@@ -17,10 +17,9 @@ namespace RegionFlags
     [APIVersion(1,11)]
     public class RegionFlags : TerrariaPlugin
     {
-        private Dictionary<string, PositionQueue> playerPos;
         private FlaggedRegionManager regions;
         private RegionPlayer[] players;
-        static IDbConnection db;
+        public static IDbConnection db;
 
         public override string Author
         {
@@ -55,6 +54,7 @@ namespace RegionFlags
             if( disposing )
             {
                 GameHooks.Update -= OnUpdate;
+                GameHooks.PostInitialize -= Import;
                 NetHooks.GreetPlayer -= OnGreet;
             }
             base.Dispose(disposing);
@@ -63,13 +63,15 @@ namespace RegionFlags
         public override void Initialize()
         {
             TShockAPI.Commands.ChatCommands.Add(new Command("setflags", SetFlags, "rflags", "rf"));
+            TShockAPI.Commands.ChatCommands.Add(new Command("defineflag", DefineRegion, "dreg"));
+            TShockAPI.Commands.ChatCommands.Add(new Command("setflags", SetDPS, "regdamage", "rd"));
             GameHooks.Update += OnUpdate;
+            GameHooks.PostInitialize += Import  ;
+            TShockAPI.GetDataHandlers.ItemDrop += OnItemDrop;
             NetHooks.GreetPlayer += OnGreet;
             ServerHooks.Leave += OnLeave;
             Database();
-            Import();
         }
-
 
         private void Database()
         {
@@ -106,7 +108,8 @@ namespace RegionFlags
             
             var table = new SqlTable("Regions",
                                      new SqlColumn("Name", MySqlDbType.VarChar, 56){ Length = 56, Primary = true},
-                                     new SqlColumn("Flags", MySqlDbType.Int32){ DefaultValue = "0" }
+                                     new SqlColumn("Flags", MySqlDbType.Int32){ DefaultValue = "0" },
+                                     new SqlColumn("Damage", MySqlDbType.Int32) { DefaultValue = "0" }
                 );
             var creator = new SqlTableCreator(db,
                                               db.GetSqlType() == SqlType.Sqlite
@@ -117,7 +120,7 @@ namespace RegionFlags
 
         private void Import()
         {
-            String query = "SELECT * FROM Blocked_NPC";
+            String query = "SELECT * FROM Regions";
 
             using (var reader = db.QueryReader(query))
             {
@@ -125,16 +128,29 @@ namespace RegionFlags
                 {
                     string name = reader.Get<string>("Name");
                     int flags = reader.Get<int>("Flags");
-                    regions.ImportRegion(name, flags);
+                    int damage = reader.Get<int>("Damage");
+                    regions.ImportRegion(name, flags, damage);
                 }
             }
-    }
+        }
+
+        private void OnItemDrop( object sender, TShockAPI.GetDataHandlers.ItemDropEventArgs args )
+        {
+            var reg =
+                TShock.Regions.GetTopRegion(TShock.Regions.InAreaRegion((int) args.Position.X/16, (int) args.Position.Y/16));
+            if( reg != null )
+            {
+                var freg = regions.getRegion(reg.Name);
+                if( freg != null && freg.getFlags().Contains(Flags.NOITEM))
+                {
+                    Main.item[args.ID].SetDefaults(0);
+                    args.Handled = true;
+                }
+            }
+        }
 
         private void OnGreet( int id, HandledEventArgs args)
         {
-            if (args.Handled)
-                return;
-
             lock (players)
             {
                 players[id] = new RegionPlayer(TShock.Players[id], regions);
@@ -149,10 +165,9 @@ namespace RegionFlags
             }
         }
 
-        
+        private int count = 0;
         private void OnUpdate()
         {
-            DateTime now = DateTime.Now;
             lock( players )
             {
                 foreach( RegionPlayer ply in players )
@@ -169,7 +184,7 @@ namespace RegionFlags
         {
             if( args.Parameters.Count < 3 )
             {
-                args.Player.SendMessage("Invalid usage", Color.Red);
+                args.Player.SendMessage("Invalid usage: /rflags(/rf) set|rem [region name] [flag]", Color.Red);
                 return;
             }
 
@@ -190,6 +205,11 @@ namespace RegionFlags
                     if (Flags.TryParse(flag.ToUpper(), out enumval))
                     {
                         reg.setFlags(enumval);
+                        if (!regions.UpdateRegion(regionname) )
+                        {
+                            args.Player.SendMessage("Region doesn't exist.", Color.Red);
+                        }
+                        args.Player.SendMessage("Region now has flag.", Color.Green);
                     }
                     else
                     {
@@ -204,6 +224,11 @@ namespace RegionFlags
                     if (Flags.TryParse(flag.ToUpper(), out enumval))
                     {
                         reg.removeFlags(enumval);
+                        if (!regions.UpdateRegion(regionname))
+                        {
+                            args.Player.SendMessage("Region doesn't exist.", Color.Red);
+                        }
+                        args.Player.SendMessage("Flag has been removed from region.", Color.Green);
                     }
                     else
                     {
@@ -213,6 +238,58 @@ namespace RegionFlags
                 }
             }
             Console.WriteLine(String.Join(", ", reg.getFlags()));
+        }
+
+        private void DefineRegion( CommandArgs args )
+        {
+            if( args.Parameters.Count < 1 )
+            {
+                args.Player.SendMessage("Invalid usage: /dreg [region name]", Color.Red);
+            }
+            else
+            {                                                       
+                string region = args.Parameters[0];
+                if( TShock.Regions.GetRegionByName(region) == null )
+                {
+                    args.Player.SendMessage("Region does not exist.", Color.Red);
+                    return;
+                }
+                if( regions.AddRegion(region, (int)Flags.NONE) )
+                    args.Player.SendMessage("Region has been defined.", Color.Green);
+                else
+                {
+                    args.Player.SendMessage("Region already defined.", Color.Red);
+                }
+            }
+        }
+
+        private void SetDPS( CommandArgs args)
+        {
+            if (args.Parameters.Count < 2)
+            {
+                args.Player.SendMessage("Invalid usage: /regdamage[/rd] [region name] [damage]", Color.Red);
+            }
+            else
+            {
+                string region = args.Parameters[0];
+                int damage = 0;
+                if( !int.TryParse(args.Parameters[1], out damage ) )
+                {
+                    args.Player.SendMessage("You must specify damage as a number.", Color.Red);
+                    return;
+                }
+
+                FlaggedRegion reg = regions.getRegion(region);
+                if (reg == null)
+                {
+                    args.Player.SendMessage("Invalid region", Color.Red);
+                    return;
+                }
+
+                args.Player.SendMessage(String.Format("DPS for {0} is now {1}", region, damage), Color.Green);
+                reg.setDPS(damage);
+                regions.UpdateRegion(reg.getRegion().Name);
+            }
         }
     }
 }
