@@ -19,7 +19,6 @@ namespace RegionFlags
 
        public void OnNPCStrike( object sender, TShockAPI.GetDataHandlers.NPCStrikeEventArgs args )
         {
-           Console.WriteLine("mob took damage");
             Region r = TShock.Regions.GetTopRegion( 
                 TShock.Regions.InAreaRegion((int)Main.npc[args.ID].position.X / 16, (int)Main.npc[args.ID].position.Y / 16) );
             if( r != null )
@@ -30,10 +29,9 @@ namespace RegionFlags
                    List<Flags> flags = reg.getFlags();
                    if( flags.Contains( Flags.GODMOB ) )
                    {
-                       Console.WriteLine( "we prevented it");
                        args.Handled = true;
-                       TSPlayer.All.SendData(PacketTypes.NpcUpdate, "", -1, );
-                       return;
+                       Main.npc[args.ID].life = Main.npc[args.ID].lifeMax;
+                       NetMessage.SendData(23, -1, -1, "", args.ID, 0f, 0f, 0f, 0);
                    }
                }
             }

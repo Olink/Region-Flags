@@ -62,6 +62,7 @@
     <Compile Include="FlaggedRegionManager.cs" />
     <Compile Include="Flags.cs" />
     <Compile Include="NPCHooks.cs" />
+    <Compile Include="PlayerHooks.cs" />
     <Compile Include="PositionQueue.cs" />
     <Compile Include="RegionFlags.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

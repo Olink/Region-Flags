@@ -21,6 +21,7 @@ namespace RegionFlags
         private RegionPlayer[] players;
         public static IDbConnection db;
         private NPCHooks npchooks;
+        private PlayerHooks playerhooks;
 
         public override string Author
         {
@@ -49,6 +50,7 @@ namespace RegionFlags
             regions = new FlaggedRegionManager();
             players = new RegionPlayer[255];
             npchooks = new NPCHooks( regions );
+            playerhooks = new PlayerHooks( regions );
         }
 
         protected override void Dispose(bool disposing)
@@ -58,6 +60,8 @@ namespace RegionFlags
                 GameHooks.Update -= OnUpdate;
                 GameHooks.PostInitialize -= Import;
                 NetHooks.GreetPlayer -= OnGreet;
+                GetDataHandlers.NPCStrike -= npchooks.OnNPCStrike;
+                GetDataHandlers.PlayerDamage -= playerhooks.OnDamage;
             }
             base.Dispose(disposing);
         }
@@ -73,6 +77,7 @@ namespace RegionFlags
             NetHooks.GreetPlayer += OnGreet;
             ServerHooks.Leave += OnLeave;
             GetDataHandlers.NPCStrike += npchooks.OnNPCStrike;
+            GetDataHandlers.PlayerDamage += playerhooks.OnDamage;
             Database();
         }
 
@@ -168,7 +173,7 @@ namespace RegionFlags
             }
         }
 
-        private int count = 0;
+        private DateTime lastUpdate = DateTime.Now;
         private void OnUpdate()
         {
             lock( players )
@@ -178,6 +183,41 @@ namespace RegionFlags
                     if( ply != null )
                     {
                         ply.Update();
+                    }
+                }
+            }
+
+            DateTime now = DateTime.Now;
+            if( (now - lastUpdate).TotalSeconds > 0 )
+            {
+                lastUpdate = now;
+                lock (Main.npc)
+                {
+                    foreach (NPC npc in Main.npc)
+                    {
+                        if (!npc.active)
+                            continue;
+
+                        Region r = TShock.Regions.GetTopRegion(
+                            TShock.Regions.InAreaRegion((int) npc.position.X/16, (int) npc.position.Y/16));
+                        if (r != null)
+                        {
+                            FlaggedRegion reg = regions.getRegion(r.Name);
+                            if (reg != null)
+                            {
+                                List<Flags> flags = reg.getFlags();
+                                if (flags.Contains(Flags.MOBKILL))
+                                {
+                                    npc.StrikeNPC(9999, 0f, 0);
+                                    NetMessage.SendData(23, -1, -1, "", npc.whoAmI, 0f, 0f, 0f, 0);
+                                }
+                                else if (flags.Contains(Flags.NOMOB))
+                                {
+                                    npc.active = false;
+                                    NetMessage.SendData(23, -1, -1, "", npc.whoAmI, 0f, 0f, 0f, 0);
+                                }
+                            }
+                        }
                     }
                 }
             }

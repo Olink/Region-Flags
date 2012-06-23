@@ -69,6 +69,18 @@ namespace RegionFlags
             {
                 f.Add(Flags.NOITEM);
             }
+            if ((flags & (int)Flags.NOMOB) == (int)Flags.NOMOB)
+            {
+                f.Add(Flags.NOMOB);
+            }
+            if ((flags & (int)Flags.MOBKILL) == (int)Flags.MOBKILL)
+            {
+                f.Add(Flags.MOBKILL);
+            }
+            if ((flags & (int)Flags.HEAL) == (int)Flags.HEAL)
+            {
+                f.Add(Flags.HEAL);
+            }
             if((flags & (int)Flags.GODMOB) == (int)Flags.GODMOB)
             {
                 f.Add( Flags.GODMOB);
