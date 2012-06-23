@@ -47,10 +47,13 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="TerrariaServer">
+    <Reference Include="TerrariaServer, Version=0.0.0.0, Culture=neutral, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <ExecutableExtension>.exe</ExecutableExtension>
       <HintPath>dll\TerrariaServer.exe</HintPath>
     </Reference>
-    <Reference Include="TShockAPI">
+    <Reference Include="TShockAPI, Version=3.8.0.304, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>dll\TShockAPI.dll</HintPath>
     </Reference>
   </ItemGroup>
@@ -58,6 +61,7 @@
     <Compile Include="FlaggedRegion.cs" />
     <Compile Include="FlaggedRegionManager.cs" />
     <Compile Include="Flags.cs" />
+    <Compile Include="NPCHooks.cs" />
     <Compile Include="PositionQueue.cs" />
     <Compile Include="RegionFlags.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

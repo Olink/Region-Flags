@@ -12,6 +12,10 @@ namespace RegionFlags
         PVP = 2,
         DEATH = 4,
         HURT = 8,
-        NOITEM = 16
+        NOITEM = 16,
+        NOMOB = 32,
+        MOBKILL = 64,
+        HEAL = 128, 
+        GODMOB = 256
     }
 }

@@ -14,12 +14,13 @@ using Terraria;
 
 namespace RegionFlags
 {
-    [APIVersion(1,11)]
+    [APIVersion(1,12)]
     public class RegionFlags : TerrariaPlugin
     {
         private FlaggedRegionManager regions;
         private RegionPlayer[] players;
         public static IDbConnection db;
+        private NPCHooks npchooks;
 
         public override string Author
         {
@@ -47,6 +48,7 @@ namespace RegionFlags
             Order = 3;
             regions = new FlaggedRegionManager();
             players = new RegionPlayer[255];
+            npchooks = new NPCHooks( regions );
         }
 
         protected override void Dispose(bool disposing)
@@ -70,6 +72,7 @@ namespace RegionFlags
             TShockAPI.GetDataHandlers.ItemDrop += OnItemDrop;
             NetHooks.GreetPlayer += OnGreet;
             ServerHooks.Leave += OnLeave;
+            GetDataHandlers.NPCStrike += npchooks.OnNPCStrike;
             Database();
         }
 

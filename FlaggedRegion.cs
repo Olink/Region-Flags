@@ -69,6 +69,10 @@ namespace RegionFlags
             {
                 f.Add(Flags.NOITEM);
             }
+            if((flags & (int)Flags.GODMOB) == (int)Flags.GODMOB)
+            {
+                f.Add( Flags.GODMOB);
+            }
             return f;
         }
 
