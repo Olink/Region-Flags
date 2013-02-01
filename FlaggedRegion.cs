@@ -12,6 +12,7 @@ namespace RegionFlags
         private int flags = 0;
         private Region region;
         private int dps = 0;
+        private int hps = 0;
 
         public FlaggedRegion(Region r )
         {
@@ -77,13 +78,17 @@ namespace RegionFlags
             {
                 f.Add(Flags.MOBKILL);
             }
-            if ((flags & (int)Flags.HEAL) == (int)Flags.HEAL)
+            if ((flags & (int)Flags.HEALONDAMAGE) == (int)Flags.HEALONDAMAGE)
             {
-                f.Add(Flags.HEAL);
+                f.Add(Flags.HEALONDAMAGE);
             }
             if((flags & (int)Flags.GODMOB) == (int)Flags.GODMOB)
             {
                 f.Add( Flags.GODMOB);
+            }
+            if ((flags & (int)Flags.HEAL) == (int)Flags.HEAL)
+            {
+                f.Add(Flags.HEAL);
             }
             return f;
         }
@@ -101,6 +106,16 @@ namespace RegionFlags
         public void setDPS( int s )
         {
             dps = s;
+        }
+
+        public int getHPS()
+        {
+            return hps;
+        }
+
+        public void setHPS(int s)
+        {
+            hps = s;
         }
     }
 }

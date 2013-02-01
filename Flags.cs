@@ -15,7 +15,8 @@ namespace RegionFlags
         NOITEM = 16,
         NOMOB = 32,
         MOBKILL = 64,
-        HEAL = 128, 
-        GODMOB = 256
+        HEALONDAMAGE = 128,
+        GODMOB = 256,
+        HEAL = 512,
     }
 }

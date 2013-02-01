@@ -26,6 +26,7 @@ namespace RegionFlags
         private DateTime lastUpdate = DateTime.Now;
         private DateTime lastUpdateAnnounce = DateTime.Now;
         private DateTime lastDamageUpdate = DateTime.Now;
+        private DateTime lastHealUpdate = DateTime.Now;
         public void Update()
         {
             DateTime now = DateTime.Now;
@@ -85,6 +86,17 @@ namespace RegionFlags
                                 NetMessage.SendData((int)PacketTypes.PlayerDamage, -1, -1, " died a slow, horrible death.", player.Index, 0, damage,
                                 (float)0);
                             }
+                        }
+                    }
+                    if (flags.Contains(Flags.HEAL) && reg.getHPS() > 0)
+                    {
+                        if ((now - lastHealUpdate).TotalSeconds >= reg.getHPS())
+                        {
+                            lastHealUpdate = now;
+                            var items = TShock.Utils.GetItemByIdOrName("heart");
+                            Player ply = player.TPlayer;
+                            Utilities.GiveItem(items[0].name, (int)ply.position.X, (int)ply.position.Y, items[0].width,
+                                        items[0].height, items[0].type, 1, items[0].prefix, player.Index, ply.velocity);
                         }
                     }
                 }

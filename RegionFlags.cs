@@ -71,6 +71,7 @@ namespace RegionFlags
             TShockAPI.Commands.ChatCommands.Add(new Command("setflags", SetFlags, "rflags", "rf"));
             TShockAPI.Commands.ChatCommands.Add(new Command("defineflag", DefineRegion, "dreg"));
             TShockAPI.Commands.ChatCommands.Add(new Command("setflags", SetDPS, "regdamage", "rd"));
+            TShockAPI.Commands.ChatCommands.Add(new Command("setflags", SetHPS, "regheal", "rh"));
             GameHooks.Update += OnUpdate;
             GameHooks.PostInitialize += Import  ;
             TShockAPI.GetDataHandlers.ItemDrop += OnItemDrop;
@@ -117,7 +118,8 @@ namespace RegionFlags
             var table = new SqlTable("Regions",
                                      new SqlColumn("Name", MySqlDbType.VarChar, 56){ Length = 56, Primary = true},
                                      new SqlColumn("Flags", MySqlDbType.Int32){ DefaultValue = "0" },
-                                     new SqlColumn("Damage", MySqlDbType.Int32) { DefaultValue = "0" }
+                                     new SqlColumn("Damage", MySqlDbType.Int32) { DefaultValue = "0" },
+                                     new SqlColumn("Heal", MySqlDbType.Int32) { DefaultValue = "0" }
                 );
             var creator = new SqlTableCreator(db,
                                               db.GetSqlType() == SqlType.Sqlite
@@ -137,7 +139,8 @@ namespace RegionFlags
                     string name = reader.Get<string>("Name");
                     int flags = reader.Get<int>("Flags");
                     int damage = reader.Get<int>("Damage");
-                    regions.ImportRegion(name, flags, damage);
+                    int heal = reader.Get<int>("Heal");
+                    regions.ImportRegion(name, flags, damage, heal);
                 }
             }
         }
@@ -331,6 +334,35 @@ namespace RegionFlags
 
                 args.Player.SendMessage(String.Format("DPS for {0} is now {1}", region, damage), Color.Green);
                 reg.setDPS(damage);
+                regions.UpdateRegion(reg.getRegion().Name);
+            }
+        }
+
+        private void SetHPS(CommandArgs args)
+        {
+            if (args.Parameters.Count < 2)
+            {
+                args.Player.SendMessage("Invalid usage: /regheal[/rh] [region name] [heal]", Color.Red);
+            }
+            else
+            {
+                string region = args.Parameters[0];
+                int health = 0;
+                if (!int.TryParse(args.Parameters[1], out health))
+                {
+                    args.Player.SendMessage("You must specify health as a number of seconds between heart drops.", Color.Red);
+                    return;
+                }
+
+                FlaggedRegion reg = regions.getRegion(region);
+                if (reg == null)
+                {
+                    args.Player.SendMessage("Invalid region", Color.Red);
+                    return;
+                }
+
+                args.Player.SendMessage(String.Format("HPS for {0} is now {1}", region, health), Color.Green);
+                reg.setHPS(health);
                 regions.UpdateRegion(reg.getRegion().Name);
             }
         }
