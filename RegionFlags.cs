@@ -1,20 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
 using System.IO;
-using System.Linq;
-using System.Text;
-using Hooks;
 using Mono.Data.Sqlite;
 using MySql.Data.MySqlClient;
+using TerrariaApi.Server;
 using TShockAPI;
 using TShockAPI.DB;
 using Terraria;
 
 namespace RegionFlags
 {
-    [APIVersion(1,12)]
+    [ApiVersion(1,14)]
     public class RegionFlags : TerrariaPlugin
     {
         private FlaggedRegionManager regions;
@@ -57,9 +54,11 @@ namespace RegionFlags
         {
             if( disposing )
             {
-                GameHooks.Update -= OnUpdate;
-                GameHooks.PostInitialize -= Import;
-                NetHooks.GreetPlayer -= OnGreet;
+				ServerApi.Hooks.GameUpdate.Deregister(this, OnUpdate);
+				ServerApi.Hooks.GamePostInitialize.Deregister(this, Import);
+				GetDataHandlers.ItemDrop -= OnItemDrop;
+				ServerApi.Hooks.NetGreetPlayer.Deregister(this, OnGreet);
+				ServerApi.Hooks.ServerLeave.Deregister(this, OnLeave);
                 GetDataHandlers.NPCStrike -= npchooks.OnNPCStrike;
                 GetDataHandlers.PlayerDamage -= playerhooks.OnDamage;
             }
@@ -68,15 +67,15 @@ namespace RegionFlags
 
         public override void Initialize()
         {
-            TShockAPI.Commands.ChatCommands.Add(new Command("setflags", SetFlags, "rflags", "rf"));
-            TShockAPI.Commands.ChatCommands.Add(new Command("defineflag", DefineRegion, "dreg"));
-            TShockAPI.Commands.ChatCommands.Add(new Command("setflags", SetDPS, "regdamage", "rd"));
-            TShockAPI.Commands.ChatCommands.Add(new Command("setflags", SetHPS, "regheal", "rh"));
-            GameHooks.Update += OnUpdate;
-            GameHooks.PostInitialize += Import  ;
-            TShockAPI.GetDataHandlers.ItemDrop += OnItemDrop;
-            NetHooks.GreetPlayer += OnGreet;
-            ServerHooks.Leave += OnLeave;
+            Commands.ChatCommands.Add(new Command("setflags", SetFlags, "rflags", "rf"));
+            Commands.ChatCommands.Add(new Command("defineflag", DefineRegion, "dreg"));
+            Commands.ChatCommands.Add(new Command("setflags", SetDPS, "regdamage", "rd"));
+            Commands.ChatCommands.Add(new Command("setflags", SetHPS, "regheal", "rh"));
+            ServerApi.Hooks.GameUpdate.Register(this, OnUpdate);
+            ServerApi.Hooks.GamePostInitialize.Register(this, Import);
+            GetDataHandlers.ItemDrop += OnItemDrop;
+            ServerApi.Hooks.NetGreetPlayer.Register(this, OnGreet);
+            ServerApi.Hooks.ServerLeave.Register(this, OnLeave);
             GetDataHandlers.NPCStrike += npchooks.OnNPCStrike;
             GetDataHandlers.PlayerDamage += playerhooks.OnDamage;
             Database();
@@ -128,7 +127,7 @@ namespace RegionFlags
             creator.EnsureExists(table);
         }
 
-        private void Import()
+        private void Import(EventArgs args)
         {
             String query = "SELECT * FROM Regions";
 
@@ -160,24 +159,24 @@ namespace RegionFlags
             }
         }
 
-        private void OnGreet( int id, HandledEventArgs args)
+        private void OnGreet(GreetPlayerEventArgs args)
         {
             lock (players)
             {
-                players[id] = new RegionPlayer(TShock.Players[id], regions);
+				players[args.Who] = new RegionPlayer(TShock.Players[args.Who], regions);
             }
         }
 
-        private void OnLeave(int id)
+        private void OnLeave(LeaveEventArgs args)
         {
             lock (players)
             {
-                players[id] = null;
+                players[args.Who] = null;
             }
         }
 
         private DateTime lastUpdate = DateTime.Now;
-        private void OnUpdate()
+        private void OnUpdate(EventArgs args)
         {
             lock( players )
             {

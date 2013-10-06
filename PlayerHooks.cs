@@ -30,7 +30,7 @@ namespace RegionFlags
                    if( flags.Contains( Flags.HEALONDAMAGE ) )
                    {
                        int heal = 0;
-                       int damage = Math.Max(args.Damage*(args.Critical == 1 ? 2 : 1) -
+                       int damage = Math.Max(args.Damage*(args.Critical ? 2 : 1) -
                                     (int)(Math.Round(Main.player[args.ID].statDefense * .5)), 1);
 
                        var items = TShock.Utils.GetItemByIdOrName("heart");

@@ -46,7 +46,7 @@ namespace RegionFlags
                     if( flags.Contains(Flags.PRIVATE) && !r.HasPermissionToBuildInRegion(player) )
                     {
                         Vector2 pos = positions.getTP();
-                        player.Teleport((int)pos.X / 16, (int)pos.Y / 16);
+                        player.Teleport((int)pos.X, (int)pos.Y);
                         if( warning )
                         {
                             player.SendMessage("You are barred from entering that region.", Color.Red);
