@@ -72,7 +72,7 @@ namespace RegionFlags
             Commands.ChatCommands.Add(new Command("setflags", SetDPS, "regdamage", "rd"));
             Commands.ChatCommands.Add(new Command("setflags", SetHPS, "regheal", "rh"));
             ServerApi.Hooks.GameUpdate.Register(this, OnUpdate);
-            ServerApi.Hooks.GamePostInitialize.Register(this, Import);
+            ServerApi.Hooks.GamePostInitialize.Register(this, Import, -1);
             GetDataHandlers.ItemDrop += OnItemDrop;
             ServerApi.Hooks.NetGreetPlayer.Register(this, OnGreet);
             ServerApi.Hooks.ServerLeave.Register(this, OnLeave);
