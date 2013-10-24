@@ -18,5 +18,6 @@ namespace RegionFlags
         HEALONDAMAGE = 128,
         GODMOB = 256,
         HEAL = 512,
+        NOPVP = 1024,
     }
 }

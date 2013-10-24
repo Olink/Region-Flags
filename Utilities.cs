@@ -21,6 +21,7 @@ namespace RegionFlags
             Main.item[itemid].owner = id;
             Main.item[itemid].prefix = (byte)prefix;
             Main.item[itemid].velocity = velocity;
+            Main.item[itemid].noGrabDelay = 1;
             NetMessage.SendData((int)PacketTypes.ItemDrop, -1, -1, "", itemid, 0f, 0f, 0f);
             NetMessage.SendData((int)PacketTypes.ItemOwner, -1, -1, "", itemid, 0f, 0f, 0f);
         }

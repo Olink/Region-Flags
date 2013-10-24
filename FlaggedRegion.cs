@@ -90,6 +90,10 @@ namespace RegionFlags
             {
                 f.Add(Flags.HEAL);
             }
+            if ((flags & (int)Flags.NOPVP) == (int)Flags.NOPVP)
+            {
+                f.Add(Flags.NOPVP);
+            }
             return f;
         }
 

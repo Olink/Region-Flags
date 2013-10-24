@@ -227,6 +227,12 @@ namespace RegionFlags
 
         private void SetFlags( CommandArgs args )
         {
+            if (args.Parameters.Count == 1 && args.Parameters[0] == "flags")
+            {
+                string flags = string.Join(", ", Enum.GetNames(typeof (Flags)));
+                args.Player.SendInfoMessage("Available flags: {0}", flags);
+                return;
+            }
             if( args.Parameters.Count < 3 )
             {
                 args.Player.SendMessage("Invalid usage: /rflags(/rf) set|rem [region name] [flag]", Color.Red);
@@ -244,6 +250,7 @@ namespace RegionFlags
             switch(  args.Parameters[0] )
             {
                 case "set":
+				case "add":
                 {
                     
                     Flags enumval;
@@ -282,7 +289,6 @@ namespace RegionFlags
                     break;
                 }
             }
-            Console.WriteLine(String.Join(", ", reg.getFlags()));
         }
 
         private void DefineRegion( CommandArgs args )

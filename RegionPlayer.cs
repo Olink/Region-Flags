@@ -11,7 +11,9 @@ namespace RegionFlags
     class RegionPlayer
     {
         private TSPlayer player;
+        private bool previousPVPMode = false;
         private bool forcedPVP = false;
+        private bool removedPVP = false;
         private PositionQueue positions;
         private FlaggedRegionManager regionManager;
         private DateTime lastWarned = DateTime.Now;
@@ -33,7 +35,8 @@ namespace RegionFlags
             
             Region r = TShock.Regions.GetTopRegion( TShock.Regions.InAreaRegion(player.TileX, player.TileY) );
 
-            bool inzone = false;
+            bool inPVPZone = false;
+            bool inNoPVPZone = false;
 
             bool warning = ((now - lastWarned).TotalSeconds > 5);
 
@@ -65,15 +68,29 @@ namespace RegionFlags
                     }
                     if (flags.Contains(Flags.PVP))
                     {
+                        if (!player.TPlayer.hostile)
+                        {
+                            player.SendMessage("PVP arena entered, pvp enabled.", Color.Green);
+                        }
+
                         player.TPlayer.hostile = true;
                         player.SendData(PacketTypes.TogglePvp);
                         NetMessage.SendData((int) PacketTypes.TogglePvp, -1, -1, "", player.Index);
-                        inzone = true;
-                        if (!forcedPVP)
+                        inPVPZone = true;
+                        forcedPVP = true;
+                    }
+                    if (flags.Contains(Flags.NOPVP))
+                    {
+                        if (player.TPlayer.hostile)
                         {
-                            forcedPVP = true;
-                            player.SendMessage("PVP arena entered, pvp enabled.", Color.Green);
+                            player.SendMessage("PVP free area entered, pvp disabled.", Color.Green);
                         }
+
+                        player.TPlayer.hostile = false;
+                        player.SendData(PacketTypes.TogglePvp);
+                        NetMessage.SendData((int)PacketTypes.TogglePvp, -1, -1, "", player.Index);
+                        inNoPVPZone = true;
+                        removedPVP = true;
                     }
                     if (flags.Contains(Flags.HURT))
                     {
@@ -102,13 +119,22 @@ namespace RegionFlags
                 }
             }
 
-            if( !inzone && forcedPVP )
+            if (!inPVPZone && forcedPVP)
             {
                 forcedPVP = false;
                 player.TPlayer.hostile = false;
                 player.SendData(PacketTypes.TogglePvp);
                 NetMessage.SendData((int)PacketTypes.TogglePvp, -1, -1, "", player.Index);
                 player.SendMessage("PVP arena left, pvp disabled.", Color.Green);
+            }
+
+            if (!inNoPVPZone && removedPVP)
+            {
+                removedPVP = false;
+                player.TPlayer.hostile = false;
+                player.SendData(PacketTypes.TogglePvp);
+                NetMessage.SendData((int)PacketTypes.TogglePvp, -1, -1, "", player.Index);
+                player.SendMessage("PVP free area left, pvp disabled.", Color.Green);
             }
 
             if ((now - lastUpdate).TotalSeconds > 1)
