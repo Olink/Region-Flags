@@ -56,6 +56,23 @@ namespace RegionFlags
                             lastWarned = now;
                         }
                     }
+	                List<string> bannedItems = new List<string>();
+	                if (flags.Contains(Flags.ITEMBAN) && InvalidInventory(reg.getItembans(), out bannedItems))
+	                {
+						Vector2 pos = positions.getTP();
+		                Vector2 diff = pos - player.TPlayer.position;
+						if(((diff.X*diff.X) + (diff.Y*diff.Y)) > (100*100))
+							player.Teleport((int)pos.X, (int)pos.Y);
+						else
+							player.Spawn(Main.spawnTileX, Main.spawnTileY);
+
+
+						if (warning)
+						{
+							player.SendMessage(String.Format("The following are banned in that area: {0}", string.Join(",", bannedItems)), Color.Red);
+							lastWarned = now;
+						}
+	                }
                     if (flags.Contains(Flags.DEATH) && !r.HasPermissionToBuildInRegion(player))
                     {
                         NetMessage.SendData((int)PacketTypes.PlayerDamage, -1, -1, " died Indiana Jone's style.", player.Index, 0, 999999,
@@ -148,5 +165,22 @@ namespace RegionFlags
         {
             return player;
         }
+
+	    private bool InvalidInventory(List<string> items, out List<string> banned )
+	    {
+			banned = new List<string>();
+		    foreach (Item i in player.TPlayer.inventory)
+		    {
+			    if (i != null && i.stack > 0)
+			    {
+				    if (items.Select(it => it.ToUpper()).Contains(i.name.ToUpper()) || items.Contains(i.netID.ToString()))
+				    {
+					    banned.Add(i.name);
+				    }
+			    }
+		    }
+
+		    return banned.Count > 0;
+	    }
     }
 }

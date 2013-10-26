@@ -13,6 +13,7 @@ namespace RegionFlags
         private Region region;
         private int dps = 0;
         private int hps = 0;
+		private List<string> bannedItems = new List<string>(); 
 
         public FlaggedRegion(Region r )
         {
@@ -94,6 +95,10 @@ namespace RegionFlags
             {
                 f.Add(Flags.NOPVP);
             }
+	        if ((flags & (int) Flags.ITEMBAN) == (int) Flags.ITEMBAN)
+	        {
+		        f.Add(Flags.ITEMBAN);
+	        }
             return f;
         }
 
@@ -121,5 +126,15 @@ namespace RegionFlags
         {
             hps = s;
         }
+
+	    public void setBannedItems(List<string> items)
+	    {
+		    bannedItems = items;
+	    }
+
+		public List<String> getItembans()
+	    {
+		    return bannedItems;
+	    }
     }
 }

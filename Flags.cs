@@ -19,5 +19,6 @@ namespace RegionFlags
         GODMOB = 256,
         HEAL = 512,
         NOPVP = 1024,
+		ITEMBAN = 2048,
     }
 }

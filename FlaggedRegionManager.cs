@@ -16,7 +16,7 @@ namespace RegionFlags
             regions = new Dictionary<string, FlaggedRegion>();
         }
 
-        public void ImportRegion( string name, int flags, int d, int h )
+        public void ImportRegion( string name, int flags, int d, int h, List<string> items )
         {
             var reg = TShock.Regions.GetRegionByName(name);
             if( reg == null )
@@ -27,6 +27,7 @@ namespace RegionFlags
             FlaggedRegion f = new FlaggedRegion(reg, flags);
             f.setDPS( d );
             f.setHPS(h);
+			f.setBannedItems(items);
             regions.Add( name, f );
         }
 
@@ -85,5 +86,10 @@ namespace RegionFlags
             }
             return ret;
         }
+
+	    public void Clear()
+	    {
+		    regions.Clear();
+	    }
     }
 }

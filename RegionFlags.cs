@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
+using System.Linq;
 using Mono.Data.Sqlite;
 using MySql.Data.MySqlClient;
 using TerrariaApi.Server;
 using TShockAPI;
 using TShockAPI.DB;
 using Terraria;
+using TShockAPI.Hooks;
 
 namespace RegionFlags
 {
@@ -78,6 +80,7 @@ namespace RegionFlags
             ServerApi.Hooks.ServerLeave.Register(this, OnLeave);
             GetDataHandlers.NPCStrike += npchooks.OnNPCStrike;
             GetDataHandlers.PlayerDamage += playerhooks.OnDamage;
+	        TShockAPI.Hooks.GeneralHooks.ReloadEvent += OnReload;
             Database();
         }
 
@@ -118,7 +121,8 @@ namespace RegionFlags
                                      new SqlColumn("Name", MySqlDbType.VarChar, 56){ Length = 56, Primary = true},
                                      new SqlColumn("Flags", MySqlDbType.Int32){ DefaultValue = "0" },
                                      new SqlColumn("Damage", MySqlDbType.Int32) { DefaultValue = "0" },
-                                     new SqlColumn("Heal", MySqlDbType.Int32) { DefaultValue = "0" }
+                                     new SqlColumn("Heal", MySqlDbType.Int32) { DefaultValue = "0" },
+									 new SqlColumn("BannedItems", MySqlDbType.Text) { DefaultValue = "" }
                 );
             var creator = new SqlTableCreator(db,
                                               db.GetSqlType() == SqlType.Sqlite
@@ -126,6 +130,12 @@ namespace RegionFlags
                                                 : new MysqlQueryCreator());
             creator.EnsureExists(table);
         }
+
+	    private void OnReload(ReloadEventArgs args)
+	    {
+		    regions.Clear();
+			Import(new EventArgs());
+	    }
 
         private void Import(EventArgs args)
         {
@@ -139,7 +149,10 @@ namespace RegionFlags
                     int flags = reader.Get<int>("Flags");
                     int damage = reader.Get<int>("Damage");
                     int heal = reader.Get<int>("Heal");
-                    regions.ImportRegion(name, flags, damage, heal);
+	                string bannedItems = reader.Get<string>("BannedItems") ?? "";
+
+	                List<string> bannedItemsList = new List<string>(bannedItems.Split(',').ToList().Select(s => s.Trim()));
+					regions.ImportRegion(name, flags, damage, heal, bannedItemsList);
                 }
             }
         }
