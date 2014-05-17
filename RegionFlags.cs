@@ -13,7 +13,7 @@ using TShockAPI.Hooks;
 
 namespace RegionFlags
 {
-    [ApiVersion(1,15)]
+    [ApiVersion(1,16)]
     public class RegionFlags : TerrariaPlugin
     {
         private FlaggedRegionManager regions;
