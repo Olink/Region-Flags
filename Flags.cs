@@ -20,5 +20,6 @@ namespace RegionFlags
         HEAL = 512,
         NOPVP = 1024,
 		ITEMBAN = 2048,
+		TEMPGROUP = 4096
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,15 +15,18 @@ namespace RegionFlags
         private bool previousPVPMode = false;
         private bool forcedPVP = false;
         private bool removedPVP = false;
+	    private bool tempGroup = false;
         private PositionQueue positions;
         private FlaggedRegionManager regionManager;
         private DateTime lastWarned = DateTime.Now;
+	    public Group OriginalGroup;
 
         public RegionPlayer( TSPlayer ply, FlaggedRegionManager regionManager )
         {
             player = ply;
             positions = new PositionQueue();
             this.regionManager = regionManager;
+	        OriginalGroup = ply.Group;
         }
 
         private DateTime lastUpdate = DateTime.Now;
@@ -37,6 +41,7 @@ namespace RegionFlags
 
             bool inPVPZone = false;
             bool inNoPVPZone = false;
+	        bool inTempGroupZone = false;
 
             bool warning = ((now - lastWarned).TotalSeconds > 5);
 
@@ -133,6 +138,16 @@ namespace RegionFlags
                                         items[0].height, items[0].type, 1, items[0].prefix, player.Index, ply.velocity);
                         }
                     }
+					if (flags.Contains(Flags.TEMPGROUP))
+	                {
+		                if (player.Group != reg.getTempGroup())
+		                {
+			                player.Group = reg.getTempGroup();
+							tempGroup = true;
+							player.SendInfoMessage("Your group has been changed to {0}.", player.Group);
+						}
+						inTempGroupZone = true;
+					}
                 }
             }
 
@@ -153,6 +168,16 @@ namespace RegionFlags
                 NetMessage.SendData((int)PacketTypes.TogglePvp, -1, -1, "", player.Index);
                 player.SendMessage("PVP free area left, pvp disabled.", Color.Green);
             }
+
+			if (!inTempGroupZone && tempGroup)
+			{
+				if (player.Group != OriginalGroup)
+				{
+					player.Group = OriginalGroup;
+					player.SendInfoMessage("Your group has been changed back to {0}.", player.Group);
+				}
+				tempGroup = false;
+			}
 
             if ((now - lastUpdate).TotalSeconds > 1)
             {

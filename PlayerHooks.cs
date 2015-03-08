@@ -17,6 +17,21 @@ namespace RegionFlags
             regionManager = region;
         }
 
+		public void OnItemDrop(object sender, TShockAPI.GetDataHandlers.ItemDropEventArgs args)
+		{
+			var reg =
+				TShock.Regions.GetTopRegion(TShock.Regions.InAreaRegion((int)args.Position.X / 16, (int)args.Position.Y / 16));
+			if (reg != null)
+			{
+				var freg = regionManager.getRegion(reg.Name);
+				if (freg != null && freg.getFlags().Contains(Flags.NOITEM))
+				{
+					Main.item[args.ID].SetDefaults(0);
+					args.Handled = true;
+				}
+			}
+		}
+
        public void OnDamage( object sender, TShockAPI.GetDataHandlers.PlayerDamageEventArgs args )
         {
             Region r = TShock.Regions.GetTopRegion(

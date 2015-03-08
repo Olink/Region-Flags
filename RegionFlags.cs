@@ -13,7 +13,7 @@ using TShockAPI.Hooks;
 
 namespace RegionFlags
 {
-    [ApiVersion(1,16)]
+    [ApiVersion(1,17)]
     public class RegionFlags : TerrariaPlugin
     {
         private FlaggedRegionManager regions;
@@ -58,11 +58,13 @@ namespace RegionFlags
             {
 				ServerApi.Hooks.GameUpdate.Deregister(this, OnUpdate);
 				ServerApi.Hooks.GamePostInitialize.Deregister(this, Import);
-				GetDataHandlers.ItemDrop -= OnItemDrop;
+				GetDataHandlers.ItemDrop -= playerhooks.OnItemDrop;
 				ServerApi.Hooks.NetGreetPlayer.Deregister(this, OnGreet);
 				ServerApi.Hooks.ServerLeave.Deregister(this, OnLeave);
                 GetDataHandlers.NPCStrike -= npchooks.OnNPCStrike;
                 GetDataHandlers.PlayerDamage -= playerhooks.OnDamage;
+				TShockAPI.Hooks.GeneralHooks.ReloadEvent -= OnReload;
+	            TShockAPI.Hooks.PlayerHooks.PlayerPostLogin -= OnLogin;
             }
             base.Dispose(disposing);
         }
@@ -73,14 +75,16 @@ namespace RegionFlags
             Commands.ChatCommands.Add(new Command("defineflag", DefineRegion, "dreg"));
             Commands.ChatCommands.Add(new Command("setflags", SetDPS, "regdamage", "rd"));
             Commands.ChatCommands.Add(new Command("setflags", SetHPS, "regheal", "rh"));
+			Commands.ChatCommands.Add(new Command("setflags", SetTempGroup, "regtemp", "rt"));
             ServerApi.Hooks.GameUpdate.Register(this, OnUpdate);
             ServerApi.Hooks.GamePostInitialize.Register(this, Import, -1);
-            GetDataHandlers.ItemDrop += OnItemDrop;
+            GetDataHandlers.ItemDrop += playerhooks.OnItemDrop;
             ServerApi.Hooks.NetGreetPlayer.Register(this, OnGreet);
             ServerApi.Hooks.ServerLeave.Register(this, OnLeave);
             GetDataHandlers.NPCStrike += npchooks.OnNPCStrike;
             GetDataHandlers.PlayerDamage += playerhooks.OnDamage;
 	        TShockAPI.Hooks.GeneralHooks.ReloadEvent += OnReload;
+			TShockAPI.Hooks.PlayerHooks.PlayerPostLogin += OnLogin;
             Database();
         }
 
@@ -122,7 +126,8 @@ namespace RegionFlags
                                      new SqlColumn("Flags", MySqlDbType.Int32){ DefaultValue = "0" },
                                      new SqlColumn("Damage", MySqlDbType.Int32) { DefaultValue = "0" },
                                      new SqlColumn("Heal", MySqlDbType.Int32) { DefaultValue = "0" },
-									 new SqlColumn("BannedItems", MySqlDbType.Text) { DefaultValue = "" }
+									 new SqlColumn("BannedItems", MySqlDbType.Text) { DefaultValue = "" },
+									 new SqlColumn("TempGroup", MySqlDbType.VarChar, 56)
                 );
             var creator = new SqlTableCreator(db,
                                               db.GetSqlType() == SqlType.Sqlite
@@ -150,24 +155,10 @@ namespace RegionFlags
                     int damage = reader.Get<int>("Damage");
                     int heal = reader.Get<int>("Heal");
 	                string bannedItems = reader.Get<string>("BannedItems") ?? "";
-
+	                string tempGroup = reader.Get<string>("TempGroup") ?? "";
+	                Group g = TShock.Groups.GetGroupByName(tempGroup);
 	                List<string> bannedItemsList = new List<string>(bannedItems.Split(',').ToList().Select(s => s.Trim()));
-					regions.ImportRegion(name, flags, damage, heal, bannedItemsList);
-                }
-            }
-        }
-
-        private void OnItemDrop( object sender, TShockAPI.GetDataHandlers.ItemDropEventArgs args )
-        {
-            var reg =
-                TShock.Regions.GetTopRegion(TShock.Regions.InAreaRegion((int) args.Position.X/16, (int) args.Position.Y/16));
-            if( reg != null )
-            {
-                var freg = regions.getRegion(reg.Name);
-                if( freg != null && freg.getFlags().Contains(Flags.NOITEM))
-                {
-                    Main.item[args.ID].SetDefaults(0);
-                    args.Handled = true;
+					regions.ImportRegion(name, flags, damage, heal, bannedItemsList, g);
                 }
             }
         }
@@ -187,6 +178,14 @@ namespace RegionFlags
                 players[args.Who] = null;
             }
         }
+
+	    private void OnLogin(PlayerPostLoginEventArgs args)
+	    {
+		    lock(players)
+		    {
+			    players[args.Player.Index].OriginalGroup = args.Player.Group;
+		    }
+	    }
 
         private DateTime lastUpdate = DateTime.Now;
         private void OnUpdate(EventArgs args)
@@ -384,5 +383,35 @@ namespace RegionFlags
                 regions.UpdateRegion(reg.getRegion().Name);
             }
         }
+
+		private void SetTempGroup(CommandArgs args)
+		{
+			if (args.Parameters.Count < 2)
+			{
+				args.Player.SendMessage("Invalid usage: /regtemp[/rt] [region name] [group name]", Color.Red);
+			}
+			else
+			{
+				string region = args.Parameters[0];
+				string group = args.Parameters[1];
+				Group g = TShock.Groups.GetGroupByName(group);
+				if (g == null)
+				{
+					args.Player.SendErrorMessage("Group '{0}' does not exist.");
+					return;
+				}
+
+				FlaggedRegion reg = regions.getRegion(region);
+				if (reg == null)
+				{
+					args.Player.SendMessage("Invalid region", Color.Red);
+					return;
+				}
+
+				args.Player.SendMessage(String.Format("Temp Group for {0} is now {1}", region, g.Name), Color.Green);
+				reg.setTempGroup(g);
+				regions.UpdateRegion(reg.getRegion().Name);
+			}
+		}
     }
 }

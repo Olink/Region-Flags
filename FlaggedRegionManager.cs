@@ -16,7 +16,7 @@ namespace RegionFlags
             regions = new Dictionary<string, FlaggedRegion>();
         }
 
-        public void ImportRegion( string name, int flags, int d, int h, List<string> items )
+        public void ImportRegion( string name, int flags, int d, int h, List<string> items, Group tempGroup )
         {
             var reg = TShock.Regions.GetRegionByName(name);
             if( reg == null )
@@ -28,6 +28,7 @@ namespace RegionFlags
             f.setDPS( d );
             f.setHPS(h);
 			f.setBannedItems(items);
+	        f.setTempGroup(tempGroup);
             regions.Add( name, f );
         }
 
@@ -59,7 +60,7 @@ namespace RegionFlags
             FlaggedRegion f = regions[name];
 
             RegionFlags.db.Query(
-                    "UPDATE Regions SET Flags=@0, Damage=@1, Heal=@2 WHERE Name=@3", f.getIntFlags(), f.getDPS(), f.getHPS(), name);
+                    "UPDATE Regions SET Flags=@0, Damage=@1, Heal=@2, TempGroup=@3 WHERE Name=@4", f.getIntFlags(), f.getDPS(), f.getHPS(), f.getTempGroup(), name);
             return true;
         }
 

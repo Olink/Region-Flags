@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using TShockAPI.DB;
 using Terraria;
+using TShockAPI;
 
 namespace RegionFlags
 {
@@ -13,7 +14,8 @@ namespace RegionFlags
         private Region region;
         private int dps = 0;
         private int hps = 0;
-		private List<string> bannedItems = new List<string>(); 
+		private List<string> bannedItems = new List<string>();
+	    private Group tempGroup = null;
 
         public FlaggedRegion(Region r )
         {
@@ -99,6 +101,10 @@ namespace RegionFlags
 	        {
 		        f.Add(Flags.ITEMBAN);
 	        }
+	        if ((flags & (int) Flags.TEMPGROUP) == (int) Flags.TEMPGROUP)
+	        {
+		        f.Add(Flags.TEMPGROUP);
+	        }
             return f;
         }
 
@@ -135,6 +141,16 @@ namespace RegionFlags
 		public List<String> getItembans()
 	    {
 		    return bannedItems;
+	    }
+
+	    public Group getTempGroup()
+	    {
+		    return tempGroup;
+	    }
+
+	    public void setTempGroup(Group group)
+	    {
+		    tempGroup = group;
 	    }
     }
 }
