@@ -24,7 +24,7 @@ namespace RegionFlags
 
         public override string Author
         {
-            get { return "Zack Piispanen"; }
+            get { return "Olink"; }
         }
 
         public override string Description
@@ -76,6 +76,7 @@ namespace RegionFlags
             Commands.ChatCommands.Add(new Command("setflags", SetDPS, "regdamage", "rd"));
             Commands.ChatCommands.Add(new Command("setflags", SetHPS, "regheal", "rh"));
 			Commands.ChatCommands.Add(new Command("setflags", SetTempGroup, "regtemp", "rt"));
+			Commands.ChatCommands.Add(new Command("setflags", ViewFlags, "regview", "rv"));
             ServerApi.Hooks.GameUpdate.Register(this, OnUpdate);
             ServerApi.Hooks.GamePostInitialize.Register(this, Import, -1);
             GetDataHandlers.ItemDrop += playerhooks.OnItemDrop;
@@ -237,6 +238,25 @@ namespace RegionFlags
             }
         }
 
+	    private void ViewFlags(CommandArgs args)
+	    {
+			if (args.Parameters.Count == 1)
+			{
+				FlaggedRegion region = regions.getRegion(args.Parameters[0]);
+				if (region == null)
+				{
+					args.Player.SendErrorMessage("Region '{0}' is not a region flag defined region.", args.Parameters[0]);
+					return;
+				}
+
+				string flags = string.Join(", ", region.getFlags().Select(f => f.ToString()));
+				args.Player.SendInfoMessage("Flags for '{0} are: {1}", region.getRegion().Name, flags);
+				return;
+			}
+
+			args.Player.SendErrorMessage("Usage: /regview[/rv] [region name] - Views the flags on a given region.");
+	    }
+
         private void SetFlags( CommandArgs args )
         {
             if (args.Parameters.Count == 1 && args.Parameters[0] == "flags")
@@ -397,7 +417,7 @@ namespace RegionFlags
 				Group g = TShock.Groups.GetGroupByName(group);
 				if (g == null)
 				{
-					args.Player.SendErrorMessage("Group '{0}' does not exist.");
+					args.Player.SendErrorMessage("Group '{0}' does not exist.", group);
 					return;
 				}
 
